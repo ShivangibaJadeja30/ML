@@ -1,0 +1,150 @@
+studentController.js------------
+const Student = require("../models/Student");
+
+exports.index = (req, res) => {
+    Student.findAll()
+    .then((students) => {
+        console.log("All students retrieved successfully:", students);
+        res.send({ message: "Students retrieved successfully", data: students });
+    })
+    .catch((error) => {
+        console.error("Error retrieving students:", error);
+        res.send({ message: "Error retrieving students", error: error });
+    });
+};
+
+exports.store = (req, res) => {
+    Student.create(req.body)
+    .then((newStudent) => {
+        console.log("Student created successfully:", newStudent);
+        res.send({ message: "Student created successfully", data: newStudent });
+    })
+    .catch((error) => {
+        console.error("Error creating student:", error);
+        res.send({ message: "Error creating student", error: error });
+    });
+};
+
+exports.update = (req, res) => {
+    Student.update(req.body, { where: { id: req.params.id } })
+    .then(() => {
+        console.log("Student updated successfully");
+        res.send({ message: "Student updated successfully", data: req.body });
+    })
+    .catch((error) => {
+        console.error("Error updating student:", error);
+        res.send({ message: "Error updating student", error: error });
+    });
+};
+
+exports.delete = (req, res) => {
+    Student.destroy({ where: { id: req.params.id } })
+    .then(() => {
+        console.log("Student deleted successfully");
+        res.send({ message: "Student deleted successfully" });
+    })
+    .catch((error) => {
+        console.error("Error deleting student:", error);
+        res.send({ message: "Error deleting student", error: error });
+    });
+};
+
+exports.show = (req, res) => {
+    const id = req.params.id;
+    Student.findByPk(id)
+    .then(student => {
+        if (student) {
+            res.send({ message: 'Student details', data: student });
+        } else {
+            res.send({ message: 'Student not found' });
+        }
+    })
+    .catch(err => {
+        res.send({ message: 'Error finding student', error: err });
+    });
+};
+====================================================================================================
+studentModel.js---------------------------
+const { DataTypes } = require("sequelize");
+const db = require("../db");
+
+const Student = db.define("student", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+});
+
+// create table if not exists
+db.sync()
+  .then(() => {
+    console.log("Student table created successfully");
+  })
+  .catch((err) => {
+    console.error("Unable to create table:", err);
+  });
+
+module.exports = Student;
+=====================================================================================================
+index.js--------------------------------
+const express = require("express");
+const bodyParser = require("body-parser");
+const { Sequelize } = require("sequelize");
+
+const studentRoutes = require("./routes/studentRoute");
+const app = express();
+const PORT = 5000;
+app.use(bodyParser.json());
+
+app.use("/students", studentRoutes);
+
+app.listen(PORT, () => {
+  console.log("server is running: 127.0.0.1" +PORT );
+});
+=====================================================================================================
+db.js---------------------------
+const { Sequelize } = require("sequelize");
+
+// connection
+const db = new Sequelize("mca", "root", "", {
+  host: "localhost",
+  dialect: "mysql",
+});
+
+// test connection
+db.authenticate()
+  .then(() => {
+    console.log("Connection has been established successfully.");
+  })
+  .catch((err) => {
+    console.error("Unable to connect to the database:", err);
+  });
+
+module.exports = db;
+=====================================================================================================
+studentRoute.js---------------------------
+const express = require("express");
+const Router = express.Router();
+const studentController = require("../controllers/studentController");
+
+Router.get("/index", studentController.index);
+Router.get("/show/:id", studentController.show);
+Router.post("/store", studentController.store);
+Router.put("/update/:id", studentController.update);
+Router.delete("/delete/:id", studentController.delete);
+
+module.exports = Router;
